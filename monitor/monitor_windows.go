@@ -20,7 +20,6 @@ import (
 const (
 	wmDeviceChange           = 0x0219
 	dbtDeviceArrival         = 0x8000
-	dbtDeviceRemoveComplete  = 0x8004
 	dbtDevtypDeviceInterface = 5
 
 	deviceNotifyWindowHandle        = 0x00000000
@@ -30,10 +29,7 @@ const (
 	crSuccess = 0x00000000
 
 	// CM device node registry property IDs
-	cmDrpDeviceDesc   = 0x00000001
-	cmDrpMfg          = 0x0000000C
-	cmDrpFriendlyName = 0x0000000D
-	cmDrpAddress      = 0x0000001D // connection index on parent hub
+	cmDrpAddress = 0x0000001D // connection index on parent hub
 
 	// CM_Locate_DevNode flags
 	cmLocateDevnodeNormal = 0x00000000
@@ -45,16 +41,13 @@ const (
 	usbEPDirIn = 0x80
 
 	// USB transfer types (bmAttributes & 0x03)
-	usbTransferControl     = 0
-	usbTransferIso         = 1
-	usbTransferBulk        = 2
-	usbTransferInterrupt   = 3
+	usbTransferControl  = 0
+	usbTransferIso      = 1
+	usbTransferBulk     = 2
+	usbTransferInterrupt = 3
 
 	// USB hub class GUID string (used to build hub device path)
 	usbHubGUID = "{f18a0e88-c30c-11d0-8815-00a0c906bed8}"
-
-	// FTDI vendor ID
-	ftdiVID = "0403"
 )
 
 // ── Win32 structures ─────────────────────────────────────────────────────────
@@ -229,11 +222,8 @@ func wndProc(hwnd, msg, wParam, lParam uintptr) uintptr {
 			if wParam == dbtDeviceArrival {
 				action = Attached
 			}
-			// Copy values before spawning goroutine (lParam is only valid
-			// during this call).
-			p, a := path, action
 			go func() {
-				evt := gMon.buildEvent(a, p)
+				evt := gMon.buildEvent(action, path)
 				select {
 				case gEvents <- evt:
 				default:
@@ -283,7 +273,7 @@ func (m *windowsMonitor) buildEvent(action Action, devicePath string) DeviceEven
 		evt.Product = product
 		evt.SerialNumber = serialFromPath
 		evt.Port = queryComPort(instanceID)
-		evt.Endpoints = queryEndpoints(instanceID, devicePath)
+		evt.Endpoints = queryEndpoints(instanceID)
 
 		// Cache for the corresponding remove event.
 		m.cacheMu.Lock()
@@ -303,7 +293,7 @@ func (m *windowsMonitor) buildEvent(action Action, devicePath string) DeviceEven
 			cached.Action = Removed
 			return cached
 		}
-		// No cache hit — best-effort from path only.
+		// No cache hit - best-effort from path only.
 		evt.SerialNumber = serialFromPath
 	}
 
@@ -470,7 +460,7 @@ func walkForPort(devInst uint32, depth int) string {
 // queryEndpoints attempts to retrieve USB endpoint descriptors by locating
 // the parent hub via cfgmgr32 and issuing IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX.
 // Returns nil gracefully if any step fails.
-func queryEndpoints(instanceID, devicePath string) []Endpoint {
+func queryEndpoints(instanceID string) []Endpoint {
 	// Locate the device node.
 	instanceIDW, err := syscall.UTF16PtrFromString(instanceID)
 	if err != nil {
@@ -608,7 +598,7 @@ func queryEndpoints(instanceID, devicePath string) []Endpoint {
 // createMessageWindow registers a minimal window class and creates a
 // message-only window (HWND_MESSAGE parent) to receive WM_DEVICECHANGE.
 func createMessageWindow(wndProcCb uintptr) (uintptr, error) {
-	className, _ := syscall.UTF16PtrFromString("rose_devmon")
+	className, _ := syscall.UTF16PtrFromString("dnode_devmon")
 	instance, _, _ := procGetModuleHandleW.Call(0)
 
 	wc := wndClassExW{

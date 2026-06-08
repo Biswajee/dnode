@@ -1,4 +1,3 @@
-rose
-rose.exe
+bin/
 *.log
-go.sum
+*.out

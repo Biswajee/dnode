@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - "feature/**"
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  lint:
+    name: Lint (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+
+  test:
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Run tests
+        run: go test ./... -coverprofile=coverage.out -covermode=atomic
+
+      - name: Check coverage (logger package)
+        shell: bash
+        run: |
+          COVERAGE=$(go tool cover -func=coverage.out \
+            | grep "github.com/biswajee/dnode/logger" \
+            | awk '{print $NF}' \
+            | grep -v "^$" \
+            | tail -1 \
+            | tr -d '%')
+          echo "Logger coverage: ${COVERAGE}%"
+          # Use awk for float comparison (bash can't do floats)
+          awk -v c="$COVERAGE" 'BEGIN { if (c+0 < 70) { print "Coverage " c "% is below 70% threshold"; exit 1 } }'
+
+      - name: Upload coverage
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.out

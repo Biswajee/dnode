@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/biswajee/rose/monitor"
+	"github.com/biswajee/dnode/monitor"
 )
 
 // Logger writes formatted device events to a log file and optionally stdout.
@@ -33,7 +33,7 @@ func (l *Logger) Close() error {
 
 // Log writes a formatted device event to the log file (and stdout if enabled).
 func (l *Logger) Log(evt monitor.DeviceEvent) {
-	lines := formatEvent(evt)
+	lines := FormatEvent(evt)
 
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -48,7 +48,7 @@ func (l *Logger) Log(evt monitor.DeviceEvent) {
 
 // formatEvent returns one or more lines describing the event.
 // The first line is always the summary; subsequent lines carry optional detail.
-func formatEvent(evt monitor.DeviceEvent) []string {
+func FormatEvent(evt monitor.DeviceEvent) []string {
 	name := evt.Name
 	if name == "" {
 		name = "(unknown device)"

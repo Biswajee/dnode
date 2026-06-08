@@ -1,0 +1,26 @@
+version: "2"
+
+linters:
+  default: none
+  enable:
+    - govet
+    - staticcheck
+    - errcheck
+    - gosimple
+    - ineffassign
+    - unused
+    - misspell
+
+linters-settings:
+  errcheck:
+    # syscall and low-level Win32/netlink calls intentionally ignore errors
+    exclude-functions:
+      - syscall.Close
+      - syscall.Bind
+      - (golang.org/x/sys/windows.Handle).Close
+
+issues:
+  exclude-rules:
+    - path: "_test\\.go"
+      linters:
+        - errcheck

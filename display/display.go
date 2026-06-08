@@ -8,17 +8,16 @@ import (
 	"sync"
 	"time"
 
-	"github.com/biswajee/rose/monitor"
+	"github.com/biswajee/dnode/monitor"
 )
 
 const (
-	ansiReset  = "\033[0m"
-	ansiBold   = "\033[1m"
-	ansiDim    = "\033[2m"
-	ansiGreen  = "\033[32m"
-	ansiRed    = "\033[31m"
-	ansiYellow = "\033[33m"
-	ansiCyan   = "\033[36m"
+	ansiReset = "\033[0m"
+	ansiBold  = "\033[1m"
+	ansiDim   = "\033[2m"
+	ansiGreen = "\033[32m"
+	ansiRed   = "\033[31m"
+	ansiCyan  = "\033[36m"
 
 	// Maximum recent event lines shown at the bottom.
 	maxLogLines = 10
@@ -47,13 +46,21 @@ type Tree struct {
 	mu        sync.Mutex
 	devices   map[string]*entry
 	recentLog []logLine
+	verbosity int // 1=minimal 2=standard 3=verbose
 }
 
 // New initialises the tree display and starts the background highlight ticker.
-func New() *Tree {
+// verbosity controls how much device detail is shown (1–3).
+func New(verbosity int) *Tree {
+	if verbosity < 1 {
+		verbosity = 1
+	} else if verbosity > 3 {
+		verbosity = 3
+	}
 	enableANSI()
 	t := &Tree{
-		devices: make(map[string]*entry),
+		devices:   make(map[string]*entry),
+		verbosity: verbosity,
 	}
 	go t.ticker()
 	return t
@@ -118,7 +125,7 @@ func (t *Tree) redraw() {
 	b.WriteString("\033[?25l\033[H\033[2J")
 
 	// Header.
-	b.WriteString("\n  " + ansiBold + "rose — device monitor" + ansiReset)
+	b.WriteString("\n  " + ansiBold + "dnode - device monitor" + ansiReset)
 	b.WriteString("  " + ansiDim + time.Now().Format("2006-01-02  15:04:05") + ansiReset + "\n")
 	b.WriteString("  " + ansiDim + strings.Repeat("─", 64) + ansiReset + "\n\n")
 
@@ -133,7 +140,7 @@ func (t *Tree) redraw() {
 		b.WriteString("  " + ansiDim + "(no devices attached)" + ansiReset + "\n")
 	} else {
 		for i, key := range keys {
-			renderDevice(&b, t.devices[key], i == len(keys)-1)
+			renderDevice(&b, t.devices[key], i == len(keys)-1, t.verbosity)
 		}
 	}
 
@@ -149,17 +156,20 @@ func (t *Tree) redraw() {
 		if name == "" {
 			name = l.evt.DeviceID
 		}
-		port := ""
-		if l.evt.Port != "" {
-			port = "  " + ansiCyan + l.evt.Port + ansiReset
+		if t.verbosity == 1 {
+			fmt.Fprintf(&b, "  %s  %s\n", sym, name)
+			continue
 		}
-		b.WriteString(fmt.Sprintf("  %s  %s  %s  %s%s\n",
+		line := fmt.Sprintf("  %s  %s  %s  %s",
 			ansiDim+l.t.Format("15:04:05")+ansiReset,
 			sym,
 			string(l.evt.Action),
 			name,
-			port,
-		))
+		)
+		if l.evt.Port != "" {
+			line += "  " + ansiCyan + l.evt.Port + ansiReset
+		}
+		b.WriteString(line + "\n")
 	}
 
 	// Show cursor again.
@@ -168,7 +178,7 @@ func (t *Tree) redraw() {
 	fmt.Fprint(os.Stdout, b.String())
 }
 
-func renderDevice(b *strings.Builder, e *entry, isLast bool) {
+func renderDevice(b *strings.Builder, e *entry, isLast bool, verbosity int) {
 	evt := e.evt
 	branch := "  ├── "
 	child := "  │   "
@@ -203,6 +213,11 @@ func renderDevice(b *strings.Builder, e *entry, isLast bool) {
 		"  " + nameColor + name + nameReset +
 		port + "\n")
 
+	if verbosity < 2 {
+		b.WriteString(ansiDim + child + ansiReset + "\n")
+		return
+	}
+
 	field := func(key, val, valColor string) {
 		if val == "" {
 			return
@@ -218,7 +233,7 @@ func renderDevice(b *strings.Builder, e *entry, isLast bool) {
 		field("port", evt.Port, ansiCyan)
 	}
 
-	if len(evt.Endpoints) > 0 {
+	if verbosity >= 3 && len(evt.Endpoints) > 0 {
 		b.WriteString(ansiDim + child + "│  endpoints" + ansiReset + "\n")
 		for j, ep := range evt.Endpoints {
 			epBranch := child + "│    ├── "

@@ -1,4 +1,4 @@
-module github.com/biswajee/rose
+module github.com/biswajee/dnode
 
 go 1.22
 
