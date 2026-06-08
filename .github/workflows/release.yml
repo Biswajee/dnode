@@ -6,25 +6,25 @@ on:
       - "v*.*.*"
 
 jobs:
-  verify-tag-on-main:
-    name: Verify tag is on main
+  verify-tag-on-master:
+    name: Verify tag is on master
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Check tag is reachable from main
+      - name: Check tag is reachable from master
         run: |
-          git fetch origin main
-          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
-            echo "Tag $GITHUB_REF_NAME is not on main branch. Aborting release."
+          git fetch origin master
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/master; then
+            echo "Tag $GITHUB_REF_NAME is not on master branch. Aborting release."
             exit 1
           fi
 
   build-windows:
     name: Build Windows
-    needs: verify-tag-on-main
+    needs: verify-tag-on-master
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -37,7 +37,7 @@ jobs:
       - name: Build
         run: |
           $TAG = "${{ github.ref_name }}"
-          go build -trimpath -ldflags "-s -w -X main.version=$TAG" -o bin/windows/dnode.exe .
+          go build -trimpath -ldflags "-s -w -X master.version=$TAG" -o bin/windows/dnode.exe .
 
       - uses: actions/upload-artifact@v4
         with:
@@ -46,7 +46,7 @@ jobs:
 
   build-linux:
     name: Build Linux
-    needs: verify-tag-on-main
+    needs: verify-tag-on-master
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -59,7 +59,7 @@ jobs:
       - name: Build
         run: |
           TAG="${{ github.ref_name }}"
-          go build -trimpath -ldflags "-s -w -X main.version=${TAG}" -o bin/linux/dnode .
+          go build -trimpath -ldflags "-s -w -X master.version=${TAG}" -o bin/linux/dnode .
 
       - uses: actions/upload-artifact@v4
         with:
