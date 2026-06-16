@@ -45,19 +45,17 @@ jobs:
           cache: true
 
       - name: Run tests
-        run: go test ./... -coverprofile=coverage.out -covermode=atomic
+        run: go test -v ./... -coverprofile=coverage.out -covermode=atomic
 
-      - name: Check coverage (logger package)
+      - name: Check logger coverage
         shell: bash
         run: |
-          COVERAGE=$(go tool cover -func=coverage.out \
-            | grep "github.com/biswajee/dnode/logger" \
-            | awk '{print $NF}' \
-            | grep -v "^$" \
+          go test ./logger/... -coverprofile=coverage_logger.out -covermode=atomic
+          COVERAGE=$(go tool cover -func=coverage_logger.out \
             | tail -1 \
+            | awk '{print $NF}' \
             | tr -d '%')
           echo "Logger coverage: ${COVERAGE}%"
-          # Use awk for float comparison (bash can't do floats)
           awk -v c="$COVERAGE" 'BEGIN { if (c+0 < 70) { print "Coverage " c "% is below 70% threshold"; exit 1 } }'
 
       - name: Upload coverage

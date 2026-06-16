@@ -9,8 +9,6 @@ A cross-platform USB and hardware device monitor. Detects device attach and remo
 
 Runs on **Windows** and **Linux** with no elevated privileges and no external runtime dependencies.
 
----
-
 ## Installation
 
 ### Download a binary
@@ -33,8 +31,6 @@ go build -o dnode .          # Linux
 go build -o dnode.exe .      # Windows
 ```
 
----
-
 ## Usage
 
 ```
@@ -51,29 +47,15 @@ Flags:
 
 ### Examples
 
-**Log only - silent background mode**
-```
-dnode
-```
-
-**Live terminal tree with default verbosity**
-```
-dnode -monitor
-```
-
-**Minimal display, custom log path**
-```
-dnode -monitor -v -log /var/log/dnode.log
-```
-
-**Full endpoint detail**
-```
-dnode -monitor -vvv
-```
+| Command | Description |
+|---|---|
+| `dnode` | Log only, silent background mode |
+| `dnode -monitor` | Live terminal tree, default verbosity |
+| `dnode -monitor -v` | Live terminal tree, minimal output |
+| `dnode -monitor -vvv` | Live terminal tree with USB endpoint detail |
+| `dnode -monitor -v -log /var/log/dnode.log` | Minimal display, custom log path |
 
 Press `Ctrl-C` to stop.
-
----
 
 ## Monitor output
 
@@ -103,15 +85,11 @@ Press `Ctrl-C` to stop.
 
 New devices are highlighted **green**. Removed devices flash **red** briefly before disappearing.
 
-Verbosity controls:
-
 | Flag | Tree shows | Footer shows |
 |---|---|---|
 | `-v` | ID, name, port | symbol + name |
 | `-vv` | + manufacturer, product, serial | + timestamp, action, port |
 | `-vvv` | + USB endpoints | + timestamp, action, port |
-
----
 
 ## Log file
 
@@ -133,8 +111,6 @@ Events are written in append mode and survive restarts. Remove events include th
   port          : COM3
 ```
 
----
-
 ## Device fields
 
 | Field | Windows source | Linux source |
@@ -147,15 +123,11 @@ Events are written in append mode and survive restarts. Remove events include th
 | Port | cfgmgr32 device tree walk for `PortName` | sysfs tty node walk |
 | Endpoints | `IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX` via parent hub | sysfs `ep_*` directories |
 
----
-
 ## Platform notes
 
 **Windows** - dnode creates a hidden message-only window (`HWND_MESSAGE`) and registers for `WM_DEVICECHANGE` with `DEVICE_NOTIFY_ALL_INTERFACE_CLASSES`. Runs as a normal user. Devices without a driver bound (shown as "Unknown Device" in Device Manager) do not fire `WM_DEVICECHANGE` and will not be detected.
 
 **Linux** - dnode opens a `NETLINK_KOBJECT_UEVENT` socket and reads kernel uevent messages directly. No udevadm or libudev dependency. Works for driverless devices; VID/PID and name fields are populated from sysfs when udev keys are absent.
-
----
 
 ## Contributing
 
@@ -164,8 +136,6 @@ Events are written in append mode and survive restarts. Remove events include th
 3. Open a pull request against `develop`.
 
 CI runs lint (`golangci-lint`) and tests on both Ubuntu and Windows for every push and pull request.
-
----
 
 ## License
 

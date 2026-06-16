@@ -1,7 +1,8 @@
-version: "2"
+run:
+  timeout: 5m
 
 linters:
-  default: none
+  disable-all: true
   enable:
     - govet
     - staticcheck
@@ -13,7 +14,6 @@ linters:
 
 linters-settings:
   errcheck:
-    # syscall and low-level Win32/netlink calls intentionally ignore errors
     exclude-functions:
       - syscall.Close
       - syscall.Bind
