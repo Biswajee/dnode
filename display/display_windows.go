@@ -19,5 +19,5 @@ func enableANSI() {
 	if err := windows.GetConsoleMode(handle, &mode); err != nil {
 		return
 	}
-	windows.SetConsoleMode(handle, mode|enableVirtualTerminalProcessing)
+	windows.SetConsoleMode(handle, mode|enableVirtualTerminalProcessing) //nolint:errcheck
 }

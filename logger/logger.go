@@ -46,7 +46,7 @@ func (l *Logger) Log(evt monitor.DeviceEvent) {
 	}
 }
 
-// formatEvent returns one or more lines describing the event.
+// FormatEvent returns one or more lines describing the event.
 // The first line is always the summary; subsequent lines carry optional detail.
 func FormatEvent(evt monitor.DeviceEvent) []string {
 	name := evt.Name

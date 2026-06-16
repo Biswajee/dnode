@@ -12,6 +12,8 @@ import (
 	"github.com/biswajee/dnode/monitor"
 )
 
+var version = "dev"
+
 func main() {
 	monitorMode := flag.Bool("monitor", false, "Render a live device tree on the terminal")
 	v   := flag.Bool("v",   false, "Verbosity level 1: ID, name, port")
