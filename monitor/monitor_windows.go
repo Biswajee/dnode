@@ -158,10 +158,9 @@ var (
 // ── Package-level state (required for the WndProc callback) ──────────────────
 
 var (
-	gMu       sync.Mutex
-	gMon      *windowsMonitor
-	gEvents   chan<- DeviceEvent
-	gWndProc  uintptr // kept alive to prevent GC
+	gMu     sync.Mutex
+	gMon    *windowsMonitor
+	gEvents chan<- DeviceEvent
 )
 
 // ── windowsMonitor ────────────────────────────────────────────────────────────
@@ -188,7 +187,6 @@ func (m *windowsMonitor) Run(events chan<- DeviceEvent) error {
 	gMon = m
 	gEvents = events
 	cb := syscall.NewCallback(wndProc)
-	gWndProc = cb
 	gMu.Unlock()
 
 	hwnd, err := createMessageWindow(cb)
@@ -203,7 +201,7 @@ func (m *windowsMonitor) Run(events chan<- DeviceEvent) error {
 	}
 
 	defer func() {
-		procUnregisterDeviceNotification.Call(notifyHandle)
+		procUnregisterDeviceNotification.Call(notifyHandle) //nolint:errcheck
 		destroyWindow(hwnd)
 	}()
 
@@ -539,7 +537,7 @@ func queryEndpoints(instanceID string) []Endpoint {
 	if err != nil {
 		return nil
 	}
-	defer windows.CloseHandle(hubHandle)
+	defer windows.CloseHandle(hubHandle) //nolint:errcheck
 
 	// Issue IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX.
 	var connInfo usbNodeConnInfoEx
@@ -635,8 +633,8 @@ func createMessageWindow(wndProcCb uintptr) (uintptr, error) {
 
 // destroyWindow posts WM_QUIT and destroys the window.
 func destroyWindow(hwnd uintptr) {
-	procPostQuitMessage.Call(0)
-	procDestroyWindow.Call(hwnd)
+	procPostQuitMessage.Call(0)    //nolint:errcheck
+	procDestroyWindow.Call(hwnd)   //nolint:errcheck
 }
 
 // registerAllDeviceNotifications registers the window for all device
@@ -673,7 +671,7 @@ func messageLoop() error {
 		if int32(r) == -1 {
 			return fmt.Errorf("GetMessageW: %w", err)
 		}
-		procTranslateMessage.Call(uintptr(unsafe.Pointer(&m)))
-		procDispatchMessageW.Call(uintptr(unsafe.Pointer(&m)))
+		procTranslateMessage.Call(uintptr(unsafe.Pointer(&m)))  //nolint:errcheck
+		procDispatchMessageW.Call(uintptr(unsafe.Pointer(&m)))  //nolint:errcheck
 	}
 }
