@@ -224,9 +224,13 @@ func readEndpoint(epPath string) *Endpoint {
 	}
 
 	var addr, attr, pkt, interval uint64
+	//nolint:errcheck // sysfs hex parse: zero value is safe fallback on failure
 	fmt.Sscanf(addrStr, "%x", &addr)
+	//nolint:errcheck
 	fmt.Sscanf(readSysfsFile(epPath, "bmAttributes"), "%x", &attr)
+	//nolint:errcheck
 	fmt.Sscanf(readSysfsFile(epPath, "wMaxPacketSize"), "%x", &pkt)
+	//nolint:errcheck
 	fmt.Sscanf(readSysfsFile(epPath, "bInterval"), "%x", &interval)
 
 	direction := "OUT"
@@ -272,6 +276,7 @@ func findUSBParent(sysfsPath string) string {
 // (ttyUSB*, ttyACM*, etc.) and returns its /dev path if found.
 func findTTYPort(devpath string) string {
 	var port string
+	//nolint:errcheck // walk errors are non-fatal; partial results are acceptable
 	filepath.WalkDir(devpath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil || !d.IsDir() {
 			return nil
