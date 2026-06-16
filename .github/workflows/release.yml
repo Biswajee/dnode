@@ -35,9 +35,7 @@ jobs:
           cache: true
 
       - name: Build
-        run: |
-          $TAG = "${{ github.ref_name }}"
-          go build -trimpath -ldflags "-s -w -X main.version=$TAG" -o bin/windows/dnode.exe .
+        run: go build -trimpath -ldflags "-s -w" -o bin/windows/dnode.exe .
 
       - uses: actions/upload-artifact@v4
         with:
@@ -57,9 +55,7 @@ jobs:
           cache: true
 
       - name: Build
-        run: |
-          TAG="${{ github.ref_name }}"
-          go build -trimpath -ldflags "-s -w -X main.version=${TAG}" -o bin/linux/dnode .
+        run: go build -trimpath -ldflags "-s -w" -o bin/linux/dnode .
 
       - uses: actions/upload-artifact@v4
         with:
